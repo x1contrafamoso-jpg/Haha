@@ -90,6 +90,7 @@ jobs:
             throw "A conta RDP não está habilitada."
           }
 
+          # Grupo Remote Desktop Users
           $group = Get-LocalGroup -SID "S-1-5-32-555"
 
           $members = Get-LocalGroupMember -Group $group
@@ -99,6 +100,22 @@ jobs:
               -Group $group `
               -Member $username
           }
+
+          # Grupo Administrators (permite instalar programas via UAC)
+          $admins = Get-LocalGroup -SID "S-1-5-32-544"
+
+          $adminMembers = Get-LocalGroupMember -Group $admins
+
+          if ($adminMembers.SID.Value -notcontains $user.SID.Value) {
+            Add-LocalGroupMember `
+              -Group $admins `
+              -Member $username
+          }
+
+          # Admins não recebem o aviso do UAC (instala direto)
+          Set-ItemProperty `
+            -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' `
+            -Name ConsentPromptBehaviorAdmin -Value 0
 
           Write-Host "Usuário RDP configurado com sucesso."
           Write-Host "Usuário: $username"
